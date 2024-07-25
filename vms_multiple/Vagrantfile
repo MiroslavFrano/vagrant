@@ -1,0 +1,56 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+def create_vm(vm_name,config, ip, host_port, disk_filename, disk_size, vm_memory,vm_cpus)
+  # Specify the base box to use
+  
+  config.vm.define vm_name do |node|
+    
+    node.vm.box = "oraclelinux/9"
+    node.vm.box_url = "https://oracle.github.io/vagrant-projects/boxes/oraclelinux/9.json"
+  
+    # Configure the network
+    node.vm.hostname = "#{vm_name}"
+    node.vm.network "private_network", ip: ip
+
+    # Configure storage
+    node.vm.provider "virtualbox" do |vb|
+      vb.memory = vm_memory
+      vb.cpus = vm_cpus
+      vb.customize ['createhd', '--filename', disk_filename, '--size', disk_size.to_s]
+      vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', disk_filename]
+    end
+  
+  end
+end
+
+
+# Fetch the default machine folder for VirtualBox
+default_machine_folder = `VBoxManage list systemproperties | grep "Default machine folder" | awk -F': ' '{print $2}'`.strip
+
+Vagrant.configure("2") do |config|
+
+  num_vms = 2
+  vm_prefix_name = "vm"
+  #MACHINES = %w[1 2 3].freeze
+  network_base_ip = "192.168.56"
+  host_port_base = 8080
+  disk_size = 20 * 1024 # 20 GB
+  vm_memory = 2048
+  vm_cpus = 2
+
+  #MACHINES.each do |i|
+  (1..num_vms + 1).each do |i|
+      i = i.to_i
+
+      vm_name = "#{vm_prefix_name}#{i}"
+      ip = "#{network_base_ip}.#{i + 1}"
+      host_port = host_port_base + i
+      disk_filename = File.join(default_machine_folder,"#{vm_name}_hd#{i}.vdi")
+
+      create_vm(vm_name,config, ip, host_port, disk_filename, disk_size, vm_memory,vm_cpus)
+
+    end
+
+  
+end
