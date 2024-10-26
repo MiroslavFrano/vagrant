@@ -2,13 +2,13 @@
 # vi: set ft=ruby :
 
 # Define VMs variables
-num_vms = 2
+num_vms = 1
 vm_prefix_name = "vm"
 network_base_ip = "192.168.56"
 host_port_base = 8080
-disk_size = 20 * 1024 # 20 GB
-vm_memory = 2048
-vm_cpus = 2
+disk_size = 40 * 1024 # 20 GB
+vm_memory = 4048
+vm_cpus = 3
 
 
 def create_vm(vm_name,config, ip, host_port, disk_filename, disk_size, vm_memory,vm_cpus)
@@ -22,6 +22,8 @@ def create_vm(vm_name,config, ip, host_port, disk_filename, disk_size, vm_memory
     # Configure the network
     node.vm.hostname = "#{vm_name}"
     node.vm.network "private_network", ip: ip
+    
+    
 
     # Configure storage
     node.vm.provider "virtualbox" do |vb|
@@ -29,11 +31,16 @@ def create_vm(vm_name,config, ip, host_port, disk_filename, disk_size, vm_memory
       vb.cpus = vm_cpus
       vb.customize ['createhd', '--filename', disk_filename, '--size', disk_size.to_s]
       vb.customize ['storageattach', :id, '--storagectl', 'SATA Controller', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', disk_filename]
+
+      #vb.customize ["modifyvm", :id, "--nictype1", "82540EM"]
     end
   
+    # configure users
+    node.vm.provision "shell", path: "scripts/chnguser.sh"
+    node.vm.provision "shell", path: "scripts/install_pkgs.sh"  
+
   end
 end
-
 
 # Check if VBoxManage command exists in Windows
 unless system('where VBoxManage')

@@ -1,0 +1,2 @@
+-- setup ssh (can not connect with passowrd root)
+-- dnf install net-tools
